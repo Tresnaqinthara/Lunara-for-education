@@ -151,11 +151,6 @@ function loadHistoryData() {
                     ${entry.flowIntensity ? `<span class="symptom-tag">${entry.flowIntensity}</span>` : ''}
                     ${symptomsText ? `<span class="symptom-tag">${symptomsText}</span>` : ''}
                 </div>
-                ${entry.notes && entry.notes.trim() !== ''?
-                  <div class="history-item-notes>
-                  <strong>Catatan:<strong>
-                  <p>${entry.notes}<p>
-                  ` : ''}
             </div>
         `;
     });
@@ -458,4 +453,5 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Initialization error:', err);
     }
 });
+
 
