@@ -119,12 +119,18 @@ function loadHistoryData() {
         return;
     }
     entries.sort((a, b) => new Date(b.periodStart) - new Date(a.periodStart));
+    const moodMap = {
+        'sangat buruk': '😡',
+        'buruk' : '😦',
+        'normal' : '😐',
+        'baik' : '😊',
+        'sangat baik' : '😄'
+    };
     let html = '';
     entries.forEach(entry => {
         const startDate = new Date(entry.periodStart);
         const endDate = new Date(entry.periodEnd);
         const duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-        const symptomsText = entry.symptoms.map(s => {
             const symptomsMap = {
                 'kram': 'Kram',
                 'sakitkepala': 'Sakit Kepala',
@@ -135,12 +141,16 @@ function loadHistoryData() {
                 'Nafsu' : 'Nafsu makan meningkat',
                 'ciri' : 'Bercak darah',
                 'keputihan': 'Keputihan',
-                'timbuk': 'Timbul jerawat',
+                'timbul': 'Timbul jerawat',
                 'minyak': 'Wajah lebih berminyak',
                 'fisik': 'Perubahan fisik',
             };
-            return symptomsMap[s] || s;
-        }).join(', ');
+            const symptomsText = entry.symptoms.map(s => symptomsMap[s] || s).join(',');
+            const moodEmoji = entry.mood ? moodMap[entry.mood] || '' : '';
+            const moodLabel = entry.mood
+                ? `<span class="symptom-tag mood-tag">${moodEmoji} ${entry.mood}</span>` : '';
+                const notesHtml = entry.notes
+                ? `<div class="history-item-notes"><i class="fas fa-sticky-note"></i> ${entry.notes}</div>` : '';
         html += `
             <div class="history-item">
                 <div class="history-item-header">
@@ -148,9 +158,11 @@ function loadHistoryData() {
                     <span class="history-item-duration">${duration} hari</span>
                 </div>
                 <div class="history-item-symptoms">
-                    ${entry.flowIntensity ? `<span class="symptom-tag">${entry.flowIntensity}</span>` : ''}
+                    ${entry.flowIntensity ? `<span class="symptom-tag">💧 ${entry.flowIntensity}</span>` : ''}
                     ${symptomsText ? `<span class="symptom-tag">${symptomsText}</span>` : ''}
+                    ${moodLabel}
                 </div>
+                ${notesHtml}
             </div>
         `;
     });
@@ -453,5 +465,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Initialization error:', err);
     }
 });
-
-
