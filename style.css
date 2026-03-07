@@ -195,8 +195,8 @@ img {
     align-items: center;
     justify-content: center;
     position: relative;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     overflow: hidden;
+    background-color: var(--primary-color);
 }
 .hero-overlay {
     position: absolute;
@@ -205,12 +205,28 @@ img {
     width: 100%;
     height: 100%;
     background-image: url(Maskot/maskot.jpeg);
-    background-size: 50px 50px;
-    opacity: 0.5;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    filter: blur(3px);
+    transform: scale(1.05);
+    opacity: 0.45;
+    z-index: 0;
+}
+.hero-overlay-after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(173, 20, 87, 0.55) 0%
+        rgba(74, 0, 50, 0.75) 100%
+    );
+    z-index: 1;
 }
 .hero-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     text-align: center;
     color: var(--text-white);
     padding: 20px;
@@ -607,6 +623,23 @@ img {
     background: var(--background-white);
     padding: 3px 10px;
     border-radius: 15px;
+}
+.history-item-notes {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-light);
+    background: var(--background-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-light);
+}
+.history-item-notes i {
+    color: var(--primary-color);
+    margin-right: 5px;
+}
+.mood-tag {
+    background: var(--secondary-color);
+    font-size: 14px;
 }
 .history-item-symptoms {
     display: flex;
