@@ -343,24 +343,21 @@ function initScrollTop() {
     });
 }
 function initRevealOnScroll() {
-    const hero      = document.querySelector('.hero') || document.getElementById('home');
+    const hero = document.querySelector('.hero') || document.getElementById('home');
     const revealEls = document.querySelectorAll('.reveal-on-scroll');
-    if (!hero || !revealEls.length) return;
+
     const observer = new IntersectionObserver(entries => {
         const e = entries[0];
         if (e.isIntersecting) {
             revealEls.forEach(el => {
                 el.classList.remove('show');
-                el.style.transitionDelay = '';
             });
         } else {
-            revealEls.forEach((el, i) => {
-                el.style.transitionDelay = (el.dataset.delay ? parseInt(el.dataset.delay) : i * 100) + 'ms';
-                el.classList.add('show');
-            });
+            revealEls.forEach(el => el.classList.add('show'));
         }
     }, { root: null, threshold: 0, rootMargin: '0px' });
-    observer.observe(hero);
+
+    observer.observe(hero); 
 }
 function initScrollSpy() {
     const navLinks = Array.from(document.querySelectorAll('.nav-link[href^="#"]'));
@@ -414,3 +411,4 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Initialization error:', err);
     }
 });
+
