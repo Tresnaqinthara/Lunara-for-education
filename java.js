@@ -19,10 +19,7 @@ function initNavbar() {
                 e.preventDefault();
                 const target = document.querySelector(href);
                 if (target) {
-                    window.scrollTo({
-                        top: target.offsetTop - 80,
-                        behavior: 'smooth'
-                    });
+                    window.scrollTo({ top: target.offsetTop - 80, behavior: 'smooth' });
                 }
             }
         });
@@ -57,11 +54,11 @@ function initDiary() {
     });
 }
 function saveDiaryEntry() {
-    const periodStart    = document.getElementById('periodStart').value;
-    const periodEnd      = document.getElementById('periodEnd').value;
-    const flowIntensity  = document.getElementById('flowIntensity').value;
-    const selectedMood   = document.getElementById('selectedMood').value;
-    const notes          = document.getElementById('notes').value.trim();
+    const periodStart   = document.getElementById('periodStart').value;
+    const periodEnd     = document.getElementById('periodEnd').value;
+    const flowIntensity = document.getElementById('flowIntensity').value;
+    const selectedMood  = document.getElementById('selectedMood').value;
+    const notes         = document.getElementById('notes').value.trim();
     const symptoms = [];
     document.querySelectorAll('input[name="symptom"]:checked').forEach(cb => {
         symptoms.push(cb.value);
@@ -84,8 +81,8 @@ function saveDiaryEntry() {
     entries.push(entry);
     localStorage.setItem('Lunara_diary', JSON.stringify(entries));
     document.getElementById('diaryForm').reset();
+    document.getElementById('selectedMood').value = '';
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
-
     loadHistoryData();
     alert('Catatan berhasil disimpan!');
     document.querySelector('.diary-history-container').scrollIntoView({ behavior: 'smooth' });
@@ -112,24 +109,23 @@ function loadHistoryData() {
         'sangat baik':  '😄'
     };
     const symptomsMap = {
-        'kram':         'Kram',
-        'sakitkepala':  'Sakit kepala',
-        'mood berubah': 'Mood tidak stabil',
-        'keletihan':    'Kelelahan',
-        'pusing':       'Pusing',
-        'pencernaan':   'Nyeri pencernaan',
-        'Nafsu':        'Nafsu makan meningkat',
-        'ciri':         'Bercak darah',
-        'keputihan':    'Keputihan',
-        'timbul':       'Timbul jerawat',
-        'minyak':       'Wajah lebih berminyak',
-        'fisik':        'Perubahan fisik'
+        'kram':             'Kram',
+        'sakitkepala':      'Sakit kepala',
+        'mood-tidak-stabil':'Mood tidak stabil',
+        'mood-emosi':       'Mood tidak stabil (tanda)',
+        'keletihan':        'Kelelahan',
+        'pusing':           'Pusing',
+        'pencernaan':       'Nyeri pencernaan',
+        'nafsu-makan':      'Nafsu makan meningkat',
+        'ciri':             'Bercak darah',
+        'keputihan':        'Keputihan',
+        'timbul-jerawat':   'Timbul jerawat',
+        'wajah-berminyak':  'Wajah lebih berminyak',
+        'fisik':            'Perubahan fisik'
     };
     let html = '';
     entries.forEach(entry => {
-        const start    = new Date(entry.periodStart);
-        const end      = new Date(entry.periodEnd);
-        const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        const duration     = getDuration(entry.periodStart, entry.periodEnd);
         const symptomsText = entry.symptoms
             .map(s => symptomsMap[s] || s)
             .join(', ');
@@ -166,9 +162,7 @@ function calculateAverages(entries) {
     let totalDuration = 0;
     let totalCycle    = 0;
     entries.forEach(entry => {
-        const start    = new Date(entry.periodStart);
-        const end      = new Date(entry.periodEnd);
-        totalDuration += Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        totalDuration += getDuration(entry.periodStart, entry.periodEnd);
     });
     for (let i = 0; i < entries.length - 1; i++) {
         const cycle = Math.ceil(
@@ -179,8 +173,10 @@ function calculateAverages(entries) {
     }
     const avgDuration = Math.round(totalDuration / entries.length);
     const avgCycle    = Math.round(totalCycle / (entries.length - 1));
+
     document.getElementById('avgDuration').textContent = avgDuration + ' hari';
     document.getElementById('avgCycle').textContent    = avgCycle > 0 ? avgCycle + ' hari' : '- hari';
+
     if (avgCycle > 0) localStorage.setItem('Lunara_avg_cycle', avgCycle);
 }
 function initPrediction() {
@@ -196,8 +192,10 @@ function loadLastPeriodDate() {
     if (entries.length > 0) {
         entries.sort((a, b) => new Date(b.periodStart) - new Date(a.periodStart));
         document.getElementById('lastPeriod').value = entries[0].periodStart;
-        const avgCycle = localStorage.getItem('Lunara_avg_cycle');
-        if (avgCycle) document.getElementById('cycleLength').value = avgCycle;
+        const savedAvgCycle = parseInt(localStorage.getItem('Lunara_avg_cycle'));
+        if (savedAvgCycle && savedAvgCycle >= 21 && savedAvgCycle <= 35) {
+            document.getElementById('cycleLength').value = savedAvgCycle;
+        }
     }
 }
 function calculatePrediction() {
@@ -207,7 +205,7 @@ function calculatePrediction() {
         alert('Mohon lengkapi semua data!');
         return;
     }
-    const lastDate   = new Date(lastPeriod);
+    const lastDate   = parseLocalDate(lastPeriod);
     const today      = new Date();
     const nextPeriod = new Date(lastDate);
     nextPeriod.setDate(nextPeriod.getDate() + cycleLength);
@@ -223,9 +221,7 @@ function calculatePrediction() {
     if (entries.length > 0) {
         let totalDuration = 0;
         entries.forEach(entry => {
-            const s = new Date(entry.periodStart);
-            const e = new Date(entry.periodEnd);
-            totalDuration += Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
+            totalDuration += getDuration(entry.periodStart, entry.periodEnd);
         });
         periodDuration = Math.round(totalDuration / entries.length);
     }
@@ -250,7 +246,7 @@ function displayPredictionResult(nextPeriod, ovulationDate, daysUntil, periodDur
             <div class="prediction-info">
                 <div class="info-box highlight">
                     <div class="info-box-label">Periode Berikutnya</div>
-                    <div class="info-box-value">${formatDate(nextPeriod.toISOString().split('T')[0])}</div>
+                    <div class="info-box-value">${formatDateFromObj(nextPeriod)}</div>
                 </div>
                 <div class="info-box">
                     <div class="info-box-label">Perkiraan Durasi</div>
@@ -258,17 +254,16 @@ function displayPredictionResult(nextPeriod, ovulationDate, daysUntil, periodDur
                 </div>
                 <div class="info-box">
                     <div class="info-box-label">Tanggal Ovulasi</div>
-                    <div class="info-box-value">${formatDate(ovulationDate.toISOString().split('T')[0])}</div>
+                    <div class="info-box-value">${formatDateFromObj(ovulationDate)}</div>
                 </div>
                 <div class="info-box">
                     <div class="info-box-label">Periode Subur</div>
-                    <div class="info-box-value">${formatDate(fertileStart.toISOString().split('T')[0])} – ${formatDate(fertileEnd.toISOString().split('T')[0])}</div>
+                    <div class="info-box-value">${formatDateFromObj(fertileStart)} – ${formatDateFromObj(fertileEnd)}</div>
                 </div>
             </div>
         </div>`;
 }
 let currentCalendarDate = new Date();
-
 function initCalendar() {
     generateCalendar();
 }
@@ -276,10 +271,10 @@ function generateCalendar(nextPeriod, ovulationDate, daysUntil, periodDuration, 
     const container = document.getElementById('calendarContainer');
     const year      = currentCalendarDate.getFullYear();
     const month     = currentCalendarDate.getMonth();
-    const firstDay   = new Date(year, month, 1);
-    const lastDay    = new Date(year, month + 1, 0);
-    const startDay   = firstDay.getDay();
-    const totalDays  = lastDay.getDate();
+    const firstDay  = new Date(year, month, 1);
+    const lastDay   = new Date(year, month + 1, 0);
+    const startDay  = firstDay.getDay();
+    const totalDays = lastDay.getDate();
     const monthNames = ['Januari','Februari','Maret','April','Mei','Juni',
                         'Juli','Agustus','September','Oktober','November','Desember'];
     const weekdays   = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
@@ -300,26 +295,36 @@ function generateCalendar(nextPeriod, ovulationDate, daysUntil, periodDuration, 
     for (let i = startDay - 1; i >= 0; i--) {
         html += `<div class="calendar-day other-month">${prevMonthLastDay - i}</div>`;
     }
+    let periodStart = null;
+    let periodEnd   = null;
+    if (nextPeriod && periodDuration) {
+        periodStart = new Date(nextPeriod);
+        periodEnd   = new Date(nextPeriod);
+        periodEnd.setDate(periodEnd.getDate() + periodDuration - 1);
+    }
     const today = new Date();
     for (let day = 1; day <= totalDays; day++) {
         const cur = new Date(year, month, day);
         let classes = 'calendar-day';
         if (cur.toDateString() === today.toDateString()) classes += ' today';
-        if (nextPeriod && daysUntil > 0 && daysUntil <= periodDuration) {
-            const pStart = new Date(nextPeriod);
-            pStart.setDate(pStart.getDate() - periodDuration + 1);
-            if (cur >= pStart && cur <= nextPeriod) classes += ' period';
+        if (periodStart && periodEnd && cur >= periodStart && cur <= periodEnd) {
+            classes += ' period';
         }
-        if (nextPeriod     && cur.toDateString() === nextPeriod.toDateString())    classes += ' predicted';
-        if (ovulationDate  && cur.toDateString() === ovulationDate.toDateString()) classes += ' ovulation';
-        if (fertileStart   && fertileEnd && cur >= fertileStart && cur <= fertileEnd) classes += ' fertile';
+        if (nextPeriod && cur.toDateString() === nextPeriod.toDateString()) {
+            classes += ' predicted';
+        }
+        if (ovulationDate && cur.toDateString() === ovulationDate.toDateString()) {
+            classes += ' ovulation';
+        }
+        if (fertileStart && fertileEnd && cur >= fertileStart && cur <= fertileEnd) {
+            classes += ' fertile';
+        }
         html += `<div class="${classes}">${day}</div>`;
     }
     const remaining = 42 - (startDay + totalDays);
     for (let i = 1; i <= remaining; i++) {
         html += `<div class="calendar-day other-month">${i}</div>`;
     }
-
     html += '</div></div>';
     container.innerHTML = html;
 }
@@ -327,7 +332,7 @@ function changeMonth(delta) {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
     const lastPeriod  = document.getElementById('lastPeriod').value;
     const cycleLength = parseInt(document.getElementById('cycleLength').value);
-    if (lastPeriod && cycleLength) {
+    if (lastPeriod && cycleLength && cycleLength >= 21 && cycleLength <= 35) {
         calculatePrediction();
     } else {
         generateCalendar();
@@ -343,21 +348,24 @@ function initScrollTop() {
     });
 }
 function initRevealOnScroll() {
-    const hero = document.querySelector('.hero') || document.getElementById('home');
+    const hero      = document.querySelector('.hero') || document.getElementById('home');
     const revealEls = document.querySelectorAll('.reveal-on-scroll');
-
+    if (!hero || !revealEls.length) return;
     const observer = new IntersectionObserver(entries => {
         const e = entries[0];
         if (e.isIntersecting) {
             revealEls.forEach(el => {
                 el.classList.remove('show');
+                el.style.transitionDelay = '';
             });
         } else {
-            revealEls.forEach(el => el.classList.add('show'));
+            revealEls.forEach(el => {
+                el.style.transitionDelay = (el.dataset.delay ? parseInt(el.dataset.delay) : 100) + 'ms';
+                el.classList.add('show');
+            });
         }
     }, { root: null, threshold: 0, rootMargin: '0px' });
-
-    observer.observe(hero); 
+    observer.observe(hero);
 }
 function initScrollSpy() {
     const navLinks = Array.from(document.querySelectorAll('.nav-link[href^="#"]'));
@@ -366,7 +374,6 @@ function initScrollSpy() {
         .map(l => document.querySelector(l.getAttribute('href')))
         .filter(Boolean)
         .filter(s => !(s.dataset?.skipSpy === 'true' || s.dataset?.skipSpy === '1') && !s.classList.contains('no-scrollspy'));
-
     if (!sections.length) return;
     const clearActive = () => navLinks.forEach(l => l.classList.remove('active'));
     const offset = 90;
@@ -376,7 +383,7 @@ function initScrollSpy() {
         ticking = true;
         window.requestAnimationFrame(() => {
             const fromTop = window.scrollY + offset;
-            let current  = null;
+            let current   = null;
             for (let i = sections.length - 1; i >= 0; i--) {
                 if (sections[i].offsetTop <= fromTop) { current = sections[i]; break; }
             }
@@ -391,10 +398,22 @@ function initScrollSpy() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
 }
+function getDuration(startStr, endStr) {
+    const start = parseLocalDate(startStr);
+    const end   = parseLocalDate(endStr);
+    return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+}
+function parseLocalDate(dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
 function formatDate(dateStr) {
-    const date  = new Date(dateStr);
-    const month = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
-    return `${date.getDate()} ${month[date.getMonth()]} ${date.getFullYear()}`;
+    const date  = parseLocalDate(dateStr);
+    return formatDateFromObj(date);
+}
+function formatDateFromObj(date) {
+    const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+    return `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 }
 document.addEventListener('DOMContentLoaded', () => {
     try {
@@ -411,4 +430,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Initialization error:', err);
     }
 });
-
